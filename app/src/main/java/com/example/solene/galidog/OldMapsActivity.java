@@ -168,7 +168,6 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
                     Point newPoint = new Point(latNow, lonNow);
                     listePoints.add(newPoint);
                     listeCoord.add(new LatLng(latNow,lonNow));
-                    dessinTrajet.setPoints(listeCoord);
                     BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
                     marker = mMap.addMarker(new MarkerOptions().position(youAreHere).title("Vous êtes ici").icon(point2));
                     int padding = 15;
@@ -212,7 +211,6 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
 
                     // affichage
                     listeCoord.add(new LatLng(latNow,lonNow));
-                    dessinTrajet.setPoints(listeCoord);
                     BitmapDescriptor point3 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
                     marker = mMap.addMarker(new MarkerOptions().position(youAreHere).icon(point3));
 
