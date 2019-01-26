@@ -2,6 +2,7 @@ package com.example.solene.galidog;
 
 import android.content.Context;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -32,9 +33,7 @@ public class CommandeVocale implements Parcelable {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.halte);
             jouer.start();
         }
-        else if (direction == "A") {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.activez);
-            jouer.start();
+        else {
         }
     }
 
@@ -51,8 +50,9 @@ public class CommandeVocale implements Parcelable {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.halte);
             jouer.start();
         }
-        else if (direction == "A") {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.activez);
+        else {
+            Uri myUri = Uri.parse(direction);
+            MediaPlayer jouer = MediaPlayer.create(context, myUri);
             jouer.start();
         }
     }
