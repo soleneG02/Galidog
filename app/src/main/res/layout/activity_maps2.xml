@@ -90,4 +90,66 @@
         android:textAlignment="center"
         android:textStyle="bold" />
 
+    <Button
+        android:id="@+id/activity_main_btn_enreg"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/button_record"
+        android:gravity="start"
+        android:padding="10dp"
+        android:text="Enregistrement"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/activity_main_btn_stop"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="20dp"
+        android:background="@drawable/button_record"
+        android:gravity="end"
+        android:padding="10dp"
+        android:text="Arrêter"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/activity_main_btn_jouer"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="70dp"
+        android:background="@drawable/button_record"
+        android:gravity="start"
+        android:padding="10dp"
+        android:text="Jouer"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/activity_main_btn_valide"
+        android:layout_width="150dp"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="70dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:background="@drawable/button_record"
+        android:gravity="end"
+        android:padding="10dp"
+        android:text="Valider"
+        android:textAlignment="center"
+        android:textStyle="bold" />
+
 </RelativeLayout>
