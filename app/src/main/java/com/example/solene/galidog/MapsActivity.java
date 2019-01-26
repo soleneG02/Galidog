@@ -13,6 +13,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -51,6 +52,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private Button btnGauche;
     private Button btnHalte;
     private Button btnAutre;
+    private Button btnEnreg, btnStop, btnJouer, btnValide;
     private boolean ENREGISTREMENT_TERMINE;
     private PolylineOptions dessin = new PolylineOptions().width(9).color(Color.BLUE);
     private Polyline dessinTrajet;
@@ -69,7 +71,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public static final int RequestPermissionCode = 1;
     MediaPlayer mediaPlayer;
 
-    private boolean ENREG_VALIDE = false;
+    private int ENREG_NB = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,6 +87,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         btnGauche = (Button) findViewById(R.id.activity_main_btn_gauche);
         btnHalte = (Button) findViewById(R.id.activity_main_btn_halte);
         btnAutre = (Button) findViewById(R.id.activity_main_btn_autre);
+
+        btnEnreg = (Button) findViewById(R.id.activity_main_btn_enreg);
+        btnStop = (Button) findViewById(R.id.activity_main_btn_stop);
+        btnJouer = (Button) findViewById(R.id.activity_main_btn_jouer);
+        btnValide = (Button) findViewById(R.id.activity_main_btn_valide);
+        btnEnreg.setVisibility(View.INVISIBLE);
+        btnStop.setVisibility(View.INVISIBLE);
+        btnJouer.setVisibility(View.INVISIBLE);
+        btnValide.setVisibility(View.INVISIBLE);
     }
 
     /**
@@ -310,99 +321,97 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public void BoutonAutre(final double lat, final double lon) {
         //Appel bouton autre
         btnAutre.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("NewApi")
             @Override
             public void onClick(View v) {
-                onPause();
-                CommandeVocale newCommande = null;
-                try {
-                    newCommande = new CommandeVocale("A", lat, lon, MapsActivity.this);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                btnGauche.setVisibility(View.INVISIBLE);
+                btnDroite.setVisibility(View.INVISIBLE);
+                btnHalte.setVisibility(View.INVISIBLE);
+                btnAutre.setVisibility(View.INVISIBLE);
+                btnEnreg.setVisibility(View.VISIBLE);
+                btnStop.setVisibility(View.VISIBLE);
+                btnJouer.setVisibility(View.VISIBLE);
+                btnValide.setVisibility(View.VISIBLE);
+                btnStop.setEnabled(false);
+                btnJouer.setEnabled(false);
+                btnValide.setEnabled(false);
+                btnEnreg.setEnabled(true);
 
-                Toast.makeText(MapsActivity.this, "Bouton autre activé ", Toast.LENGTH_SHORT).show();
-
-                //NOMBRE D'ESSAIS CHANGEABLE
-                int nbEssais = 3;
-                int indice = 1;
-
-                ENREG_VALIDE = false;
-
-                btnDroite.setText("Enregistrer");
-                btnDroite.setBackground(getDrawable(R.drawable.button_record));
-                btnGauche.setText("Arrêter");
-                btnGauche.setBackground(getDrawable(R.drawable.button_record));
-                btnGauche.setEnabled(false);
-                btnHalte.setText("Jouer");
-                btnHalte.setBackground(getDrawable(R.drawable.button_record));
-                btnHalte.setEnabled(false);
-                btnAutre.setText("Valider");
-                btnAutre.setBackground(getDrawable(R.drawable.button_record));
-
-                Enregistrement(newCommande);
-
-                /*if (!ENREG_VALIDE){
-                    //Retour au truc initial
-                    btnDroite.setText("A droite");
-                    btnDroite.setBackground(getDrawable(R.drawable.shape_button3));
-                    btnGauche.setText("A gauche");
-                    btnGauche.setBackground(getDrawable(R.drawable.shape_button3));
-                    btnHalte.setText("Halte");
-                    btnHalte.setBackground(getDrawable(R.drawable.shape_button3));
-                    btnAutre.setText("Autre Commande");
-                    btnAutre.setBackground(getDrawable(R.drawable.shape_button3));
-                    btnGauche.setEnabled(true);
-                    btnDroite.setEnabled(true);
-                    btnAutre.setEnabled(true);
-                    btnHalte.setEnabled(true);
-                    return;
-                }*/
-
+                Enregistrement(lat, lon);
             }
         });
     }
 
-    public void Enregistrement(final CommandeVocale newCommande) {
-        // Enregistrement
-        btnDroite.setOnClickListener(new View.OnClickListener() {
-             @Override
-             public void onClick(View view) {
-                 if (checkPermission()) {
-                     AudioSavePathInDevice = "file://android_asset/essai" + idNewCommande + ".m4a";
-                     idNewCommande++;
-                     MediaRecorderReady();
 
-                     try {
-                         mediaRecorder.prepare();
-                         mediaRecorder.start();
-                     } catch (IllegalStateException e) {
-                         e.printStackTrace();
-                     } catch (IOException e) {
-                         e.printStackTrace();
-                     }
-
-                     btnDroite.setEnabled(false);
-                     btnGauche.setEnabled(true);
-                     btnAutre.setEnabled(false);
-
-                     Toast.makeText(MapsActivity.this, "Début de l'enregistrement",
-                             Toast.LENGTH_LONG).show();
-                 } else {
-                     requestPermission();
-                 }
-
-             }
-         });
-
-        //Ecouter enregistrement
-        btnHalte.setOnClickListener(new View.OnClickListener() {
+    public void Enregistrement(final double lat, final double lon){
+        btnEnreg.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) throws IllegalArgumentException, SecurityException, IllegalStateException {
+            public void onClick(View view) {
 
-                btnGauche.setEnabled(false);
-                btnDroite.setEnabled(false);
-                btnHalte.setText("Couper");
+                if (checkPermission()) {
+
+                    ENREG_NB++;
+                    Log.i("ENREGISTREMENT", "" + ENREG_NB);
+                    btnJouer.setEnabled(false);
+                    btnValide.setEnabled(false);
+
+                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" +
+                            "Enregistrement" + idNewCommande + "AudioRecording.3gp";
+                    Log.i("Chemin", "Le CHEMIN EST / " + AudioSavePathInDevice);
+                    idNewCommande++;
+
+                    MediaRecorderReady();
+
+                    try {
+                        mediaRecorder.prepare();
+                        mediaRecorder.start();
+                    } catch (IllegalStateException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+
+                    btnEnreg.setEnabled(false);
+                    btnStop.setEnabled(true);
+
+                    Toast.makeText(MapsActivity.this, "Enregistrement démarré",
+                            Toast.LENGTH_LONG).show();
+                } else {
+                    requestPermission();
+                }
+
+            }
+        });
+
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mediaRecorder.stop();
+                btnStop.setEnabled(false);
+                btnJouer.setEnabled(true);
+                btnEnreg.setEnabled(false);
+                btnValide.setEnabled(false);
+
+                Toast.makeText(MapsActivity.this, "Enregistrement terminé",
+                        Toast.LENGTH_LONG).show();
+            }
+        });
+
+        btnJouer.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) throws IllegalArgumentException,
+                    SecurityException, IllegalStateException {
+
+                if (ENREG_NB < 3) {
+                    btnStop.setEnabled(false);
+                    btnEnreg.setEnabled(true);
+                    btnValide.setEnabled(true);
+                } else {
+                    btnStop.setEnabled(false);
+                    btnEnreg.setEnabled(false);
+                    btnValide.setEnabled(true);
+                }
 
                 mediaPlayer = new MediaPlayer();
                 try {
@@ -413,58 +422,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
 
                 mediaPlayer.start();
-                Toast.makeText(MapsActivity.this, "Écoute de l'enregistrement",
+                Toast.makeText(MapsActivity.this, "Ecoute de l'enregistrement",
                         Toast.LENGTH_LONG).show();
-
-                btnHalte.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) throws IllegalArgumentException,
-                            SecurityException, IllegalStateException {
-
-                        btnGauche.setEnabled(false);
-                        btnDroite.setEnabled(false);
-                        btnAutre.setEnabled(false);
-                        btnHalte.setText("Jouer");
-                        mediaPlayer.stop();
-                        Toast.makeText(MapsActivity.this, "Fin de l'écoute",
-                                Toast.LENGTH_LONG).show();
-                    }
-                });
             }
         });
 
-        //Valider enregistrement
-        btnAutre.setOnClickListener(new View.OnClickListener() {
-            @SuppressLint("NewApi")
+        btnValide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                ENREG_VALIDE = true;
-                //newCommande.setCommandeMP3(mediaPlayer);
+                //CONFIRMATION
+                MediaPlayer jouer = MediaPlayer.create(MapsActivity.this, R.raw.enreg_valid);
+                jouer.start();
+
+                //AJOUT A COMMANDE VOCALE
+                CommandeVocale newCommande = null;
+                try {
+                    newCommande = new CommandeVocale(AudioSavePathInDevice, lat, lon, MapsActivity.this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 listeCommandes.add(newCommande);
 
-                btnDroite.setText("A droite");
-                btnDroite.setBackground(getDrawable(R.drawable.shape_button3));
-                btnGauche.setText("A gauche");
-                btnGauche.setBackground(getDrawable(R.drawable.shape_button3));
-                btnHalte.setText("Halte");
-                btnHalte.setBackground(getDrawable(R.drawable.shape_button3));
-                btnAutre.setText("Autre Commande");
-                btnAutre.setBackground(getDrawable(R.drawable.shape_button3));
+                //MISE A JOUR DES BOUTONS
+                btnEnreg.setVisibility(View.INVISIBLE);
+                btnStop.setVisibility(View.INVISIBLE);
+                btnJouer.setVisibility(View.INVISIBLE);
+                btnValide.setVisibility(View.INVISIBLE);
+                btnGauche.setVisibility(View.VISIBLE);
+                btnDroite.setVisibility(View.VISIBLE);
+                btnHalte.setVisibility(View.VISIBLE);
+                btnAutre.setVisibility(View.VISIBLE);
                 btnGauche.setEnabled(true);
                 btnDroite.setEnabled(true);
                 btnAutre.setEnabled(true);
                 btnHalte.setEnabled(true);
             }
         });
-
-        if (mediaPlayer != null) {
-            mediaPlayer.stop();
-            mediaPlayer.release();
-            MediaRecorderReady();
-        }
-        Toast.makeText(MapsActivity.this, "Bouton autre désactivé ",
-                Toast.LENGTH_SHORT).show();
-        return;
     }
 
     // FONCTION : NE RENVOIE RIEN...
