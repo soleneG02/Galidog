@@ -10,7 +10,11 @@ import android.widget.Toast;
 import java.io.IOException;
 
 public class CommandeVocale implements Parcelable {
+    /*
+    La classe CommandeVocale gère les commandes vocales.
+     */
 
+    /* Attributs de définition des commandes vocales. */
     private int idCommande;
     private static int id = 0;
     private double latitude;
@@ -18,10 +22,16 @@ public class CommandeVocale implements Parcelable {
     private String direction;
 
     public CommandeVocale(String direct, double lat, double lon, Context context) throws IOException {
+        /*
+        Fonction de création d'une commande vocale.
+         */
+
         this.idCommande = id ++;
         this.latitude = lat;
         this.longitude = lon;
         this.direction = direct;
+
+        /* Création selon l'attribut donné en arguments. */
         if (direction == "D") {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.droite);
             jouer.start();
@@ -39,6 +49,11 @@ public class CommandeVocale implements Parcelable {
     }
 
     public void initCommande(Context context) {
+        /*
+        Fonction de lancement d'une commande vocale lors de l'affichage du trajet.
+         */
+
+        /* Création de la ommande selon l'argument. */
         if (direction.equals("D")) {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.droite);
             jouer.start();
@@ -84,40 +99,21 @@ public class CommandeVocale implements Parcelable {
         }
     };
 
-    public int getIdCommande() {
-        return idCommande;
-    }
-
-    public void setIdCommande(int indiceCommande) {
-        this.idCommande = indiceCommande;
-    }
-
     public double getLatitude() {
         return latitude;
     }
 
-    public void setLatitude(double latitude) {
-        this.latitude = latitude;
-    }
 
     public double getLongitude() {
         return longitude;
     }
 
-    public void setLongitude(double longitude) {
-        this.longitude = longitude;
-    }
-
-    public String getDirection() {
-        return direction;
-    }
-
-    public void setDirection(String direction) {
-        this.direction = direction;
-    }
-
     @Override
     public String toString() {
+        /*
+        Affichage de la commande vocale.
+         */
+
         return "CommandeVocale{" +
                 "idCommande=" + idCommande +
                 ", latitude=" + latitude +
