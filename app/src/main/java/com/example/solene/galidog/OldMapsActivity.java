@@ -2,7 +2,10 @@ package com.example.solene.galidog;
 
 
 
+import android.content.Context;
 import android.graphics.Color;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.CountDownTimer;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -34,9 +37,6 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
-import java.util.List;
-
-import static java.lang.Math.sqrt;
 
 public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
@@ -121,9 +121,6 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
     private int compteurCommande = 0;
     private Point pointSuivant;
 
-
-
-
     public void pathView() {
         /* cette fonction affiche le chemin qui est enregistré*/
 
@@ -140,11 +137,9 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
             builder.include(coordonnees);
         }
         LatLngBounds bounds = builder.build();
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 0);
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 5);
         mMap.animateCamera(cu);  //ajuste la caméra sur l'ensemble des points
     }
-
-
 
     public void androidFirstLocation() {
         /*
@@ -166,12 +161,9 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
                     Toast.makeText(OldMapsActivity.this, "Coordonnées : " + latNow + " / " + lonNow, Toast.LENGTH_SHORT).show();
                     LatLng youAreHere = new LatLng(latNow, lonNow);
                     Point newPoint = new Point(latNow, lonNow);
-                    listePoints.add(newPoint);
                     listeCoord.add(new LatLng(latNow,lonNow));
-                    BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
+                    BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point_rouge);
                     marker = mMap.addMarker(new MarkerOptions().position(youAreHere).title("Vous êtes ici").icon(point2));
-                    int padding = 15;
-                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
                 }
 
                 public void onStatusChanged(String provider, int status, Bundle extras) {}
@@ -211,20 +203,24 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
 
                     // affichage
                     listeCoord.add(new LatLng(latNow,lonNow));
-                    BitmapDescriptor point3 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
+                    BitmapDescriptor point3 = BitmapDescriptorFactory.fromResource(R.drawable.point_rouge);
                     marker = mMap.addMarker(new MarkerOptions().position(youAreHere).icon(point3));
 
                     if (listeCommandes.size() != 0) {
-                    CommandeVocale commande = listeCommandes.get(0);
-                    double latComm = commande.getLatitude();
-                    double lonComm = commande.getLongitude();
+                        CommandeVocale commande = listeCommandes.get(0);
+                        double latComm = commande.getLatitude();
+                        double lonComm = commande.getLongitude();
+                        double dist = TransformCoordToMeter(latNow, lonNow, latComm, lonComm);
+                        Log.i("DISTANCE ", ""+ dist);
 
-                    // lecture de la commande vocale si on s'approche suffisement près
-                    if (sqrt(Math.pow(latNow-lonNow,2)+Math.pow(latComm-lonComm,2))<3) {
-                        commande.initCommande(OldMapsActivity.this);
-                        listeCommandes.remove(0);
-                    } }
-                    new CountDownTimer(500, 1) {
+                        // lecture de la commande vocale si on s'approche suffisement près
+                        if (dist<3) {
+                            Log.i("COMMANDE VOCALE ", ""+ commande.toString());
+                            commande.initCommande(OldMapsActivity.this);
+                            listeCommandes.remove(0);
+                        }
+                    }
+                    new CountDownTimer(100, 1) {
                         public void onFinish() {
                             // When timer is finished
                             // Execute your code here
@@ -245,7 +241,7 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
 
             androidLocationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    10, // en millisecondes
+                    100, // en millisecondes
                     1, // en mètres
                     androidLocationListener);
 
@@ -284,6 +280,22 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
             androidLocationManager = null;
             androidLocationListener = null;
         }
+    }
+
+    public double TransformCoordToMeter(double lat1, double lon1, double lat2, double lon2){
+        int R = 6378000; //Rayon de la terre en mètre
+
+        double lat1new = (Math.PI * lat1)/180;
+        double lon1new = (Math.PI * lon1)/180;
+        double lat2new = (Math.PI * lat2)/180;
+        double lon2new = (Math.PI * lon2)/180;
+
+        double dist = R * (Math.PI/2 - Math.asin( Math.sin(lat2new) * Math.sin(lat1new) + Math.cos(lon2new - lon1new) * Math.cos(lat2new) * Math.cos(lat1new)));
+        return dist;
+    }
+
+    public void JouerCommande(String direct, Context context){
+
     }
 
 }
