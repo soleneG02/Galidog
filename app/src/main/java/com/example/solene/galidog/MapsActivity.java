@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.GnssStatus;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -18,7 +17,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.util.Consumer;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -39,6 +37,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
@@ -48,12 +47,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     private GoogleMap mMap;
     private Button btnStartRecord;
-    private Button btnDroite;
-    private Button btnGauche;
-    private Button btnHalte;
-    private Button btnAutre;
+    private Button btnDroite, btnGauche, btnHalte, btnAutre;
     private Button btnEnreg, btnStop, btnJouer, btnValide;
-    private boolean ENREGISTREMENT_TERMINE;
     private PolylineOptions dessin = new PolylineOptions().width(9).color(Color.BLUE);
     private Polyline dessinTrajet;
     private ArrayList<LatLng> listeCoord = new ArrayList<>();
@@ -122,7 +117,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onClick(View v) {
                 /* Démarrer l'enregistrement, affichage d'un toast pour vérification */
-                ENREGISTREMENT_TERMINE = false;
                 Toast toast = Toast.makeText(MapsActivity.this, "L'enregistrement démarre", Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
@@ -134,7 +128,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         onPause();
                         Toast.makeText(MapsActivity.this, "Fin de l'enregistrement", Toast.LENGTH_SHORT).show();
                         btnStartRecord.setText("Retour à l'accueil");
-                        ENREGISTREMENT_TERMINE = true;
                         btnStartRecord.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -176,7 +169,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     dessinTrajet.setPoints(listeCoord);
                     BitmapDescriptor point1 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
                     mMap.addMarker(new MarkerOptions().position(youAreHere).title("Vous êtes ici").icon(point1));
-                    int padding = 15;
+                    int padding = 17;
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
                 }
 
@@ -240,6 +233,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         //Création d'un marqueur
                         BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_trajet);
                         mMap.addMarker(new MarkerOptions().position(youAreHere).title("Point n°" + pointSuivant.getIdPoint()).icon(point2));
+                        int padding = 17;
+                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
                     }
                 }
 
@@ -256,7 +251,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             /* Requête multiple, suivi de la géolocalisation */
             androidLocationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER,
-                    10, // en millisecondes
+                    500, // en millisecondes
                     1, // en mètres
                     androidLocationListener);
         }
