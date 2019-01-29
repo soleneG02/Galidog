@@ -1,15 +1,8 @@
 package com.example.solene.galidog;
 
-
-
-import android.content.Context;
 import android.graphics.Color;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.CountDownTimer;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Button;
 import android.Manifest;
 import android.content.Intent;
@@ -39,65 +32,86 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.ArrayList;
 
 public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallback {
+    /*
+    La classe OldMapsActivity gère l'affichage du trajet, et le lancement des commandes vocales de guidage.
+     */
 
+    /* Attributs nécessaires à l'utilisation d'une carte Google Maps, et à la géolocalisation. */
     private GoogleMap mMap;
     private Button btnStartPath;
+    private Marker marker;
+    private LocationManager androidLocationManager;
+    private LocationListener androidLocationListener;
+    private final static int REQUEST_CODE_UPDATE_LOCATION = 42;
+
+    /* Attributs utiles au fonctionnement de l'algorithme. */
     private ArrayList<CommandeVocale> listeCommandes;
     private ArrayList<Point> listePoints;
-    private Marker marker;
+
+    /* Attributs pour design de l'application. */
     private PolylineOptions dessin = new PolylineOptions().width(9).color(Color.BLUE);
     private Polyline dessinTrajet;
     private ArrayList<LatLng> listeCoord = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        /*
+        Fonction qui se lance à l'ouverture de l'activité d'affichage.
+        */
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_old_maps);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        /* Récupération des données. */
         listeCommandes = getIntent().getParcelableArrayListExtra("commandes");
         listePoints = getIntent().getParcelableArrayListExtra("points");
 
+        /* Association des boutons du layout à l'activité. */
         btnStartPath = (Button) findViewById(R.id.activity_main_btn_start_path);
-
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        /*
+        Fonction qui se lance lorsque la carte Google Maps est prête.
+         */
+
         mMap = googleMap;
+
+        /* Initialisation du trajet dessiné */
         dessinTrajet = mMap.addPolyline(dessin);
 
-        pathView(); // afficher le trajet enregistré
+        /* La fonction PathView() affiche le trajet enregistré. */
+        pathView();
 
-        androidFirstLocation();   //se positionner
+        /* La fonction androidFirstLocation() affiche la localisation de l'utilisateur tout au long de l'utilisation de l'activité. */
+        androidFirstLocation();
 
-        /* début du trajet */
+        /* Démarrage de la comparaison entre la localisation et le trajet enregistré. */
         btnStartPath.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast toast = Toast.makeText(OldMapsActivity.this, "Le trajet démarre", Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
+
+                /*La fonction androidUpdateLocation() lance les commandes vocales selon la position de l'utilisateur. */
                 androidUpdateLocation();
+
                 btnStartPath.setText("Arrêter le trajet");
+
+                /* Arrêt du guidage. */
                 btnStartPath.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+
                         onPause();
                         Toast.makeText(OldMapsActivity.this, "Trajet termminé", Toast.LENGTH_SHORT).show();
                         btnStartPath.setText("Retour à l'accueil");
+
+                        /* Retour à l'accueil. */
                         btnStartPath.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -105,63 +119,87 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
                                 startActivity(retourAccueil);
                             }
                         });
-
                     }
                 });
-
             }
         });
-
     }
 
-    private LocationManager androidLocationManager;
-    private LocationListener androidLocationListener;
-    private final static int REQUEST_CODE_UPDATE_LOCATION = 42;
-    private boolean commandeCreee = false;
-    private int compteurCommande = 0;
-    private Point pointSuivant;
-
     public void pathView() {
-        /* cette fonction affiche le chemin qui est enregistré*/
+        /*
+        Fonction qui affiche les points et commandes enregistrées précedemment.
+         */
 
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
+        /* Affichage de chaque point de la liste des points. */
         for (int i = 0; i < listePoints.size(); i++) {
-            //la taille : parcourir la liste une premiere fois pour voir le premier element non nul??
+
+            /* Récupération du premier point de la liste. */
             Point pointChemin = listePoints.get(i);
             LatLng coordonnees = new LatLng(pointChemin.getLatitude(), pointChemin.getLongitude());
+
+            /* Affichage du tracé entre les points. */
             listeCoord.add(coordonnees);
             dessinTrajet.setPoints(listeCoord);
+
+            /* Affichage d'un marqueur associé à la localisation. */
             BitmapDescriptor point1 = BitmapDescriptorFactory.fromResource(R.drawable.point2_trajet);
             mMap.addMarker(new MarkerOptions().position(coordonnees).alpha(0.7f).icon(point1));
+
+            /* Mise en commun des toutes les coordonnées pour connaitres les limites. */
             builder.include(coordonnees);
         }
+
+        /* Affichage de chaque point de la liste des commandes vocales. */
+        for (int j=0; j < listeCommandes.size(); j++) {
+
+            /* Récupération de la première commande vocale de la liste. */
+            CommandeVocale pointCommande = listeCommandes.get(j);
+            LatLng coordonnees = new LatLng(pointCommande.getLatitude(), pointCommande.getLongitude());
+
+            /* Affichage d'un marqueur associé à la localisation. */
+            BitmapDescriptor point1 = BitmapDescriptorFactory.fromResource(R.drawable.diamond_green);
+            mMap.addMarker(new MarkerOptions().position(coordonnees).alpha(0.7f).icon(point1));
+        }
+
+        /* Ajustement de la caméra sur l'ensemble des points. */
         LatLngBounds bounds = builder.build();
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 5);
-        mMap.animateCamera(cu);  //ajuste la caméra sur l'ensemble des points
+        mMap.animateCamera(cu);
     }
 
     public void androidFirstLocation() {
         /*
-        Cette fonction affiche la géolocalisation de l'utilisateur lorsqu'il arrive pour la première fois sur la page.
+        Fonction qui affiche la géolocalisation de l'utilisateur lors du guidage.
          */
+
+        /* Vérification des permissions du téléphone en terme de géolocalisation. */
         if (ActivityCompat.checkSelfPermission(OldMapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     OldMapsActivity.this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_CODE_UPDATE_LOCATION);
-        } else {
+        }
+
+        /* Si les permissions sont accordées, mise en place de l'enregistrement. */
+        else {
             androidLocationManager = (LocationManager) this.getSystemService(OldMapsActivity.this.LOCATION_SERVICE);
             androidLocationListener = new LocationListener() {
                 public void onLocationChanged(Location loc) {
-                    /* Affichage des coordonnées & création d'un marqueur */
+
+                    /* Récupération des coordonnées actuelles */
                     double latNow = loc.getLatitude();
                     double lonNow = loc.getLongitude();
-                    Toast.makeText(OldMapsActivity.this, "Coordonnées : " + latNow + " / " + lonNow, Toast.LENGTH_SHORT).show();
                     LatLng youAreHere = new LatLng(latNow, lonNow);
-                    Point newPoint = new Point(latNow, lonNow);
-                    listeCoord.add(new LatLng(latNow,lonNow));
+
+                    /* Suppression de l'ancien marqueur. */
+                    if (marker != null){
+                        marker.remove();
+                    }
+
+                    /* Affichage d'un marqueur à l'emplacement de l'utilisateur. */
                     BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point_rouge);
                     marker = mMap.addMarker(new MarkerOptions().position(youAreHere).title("Vous êtes ici").icon(point2));
                 }
@@ -173,87 +211,76 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
                 public void onProviderDisabled(String provider) {}
             };
 
-            /* Requête unique (première géolocalisation) */
-            androidLocationManager.requestSingleUpdate(
-                    LocationManager.GPS_PROVIDER,
-                    androidLocationListener,
-                    null);
+            /* Requête multiple, suivi de la géolocalisation */
+            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, androidLocationListener);
         }
     }
 
     public void androidUpdateLocation() {
         /*
-        cette fonction actualise la position et l'affiche au fur et à mesure que l'utilisateur avance */
+        Fonction qui lance les commandes vocales lorsqu'elles sont proches de la position de l'utilisateur.
+         */
 
+        /* Vérification des permissions du téléphone en terme de géolocalisation. */
         if (ActivityCompat.checkSelfPermission(OldMapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     OldMapsActivity.this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_CODE_UPDATE_LOCATION);
-        } else {
+        }
+
+        /* Si les permissions sont accordées, mise en place de l'enregistrement. */
+        else {
             androidLocationManager = (LocationManager) this.getSystemService(OldMapsActivity.this.LOCATION_SERVICE);
             androidLocationListener = new LocationListener() {
                 public void onLocationChanged(Location loc) {
 
-                    // Récupération de la localisation
+                    /* Récupération des coordonnées actuelles */
                     double latNow = loc.getLatitude();
                     double lonNow = loc.getLongitude();
-                    LatLng youAreHere = new LatLng(latNow, lonNow);
 
-                    // affichage
-                    listeCoord.add(new LatLng(latNow,lonNow));
-                    BitmapDescriptor point3 = BitmapDescriptorFactory.fromResource(R.drawable.point_rouge);
-                    marker = mMap.addMarker(new MarkerOptions().position(youAreHere).icon(point3));
-
+                    /* Tant que la liste des commandes n'est pas vide. */
                     if (listeCommandes.size() != 0) {
+
+                        /* Récupération de la première commande. */
                         CommandeVocale commande = listeCommandes.get(0);
                         double latComm = commande.getLatitude();
                         double lonComm = commande.getLongitude();
-                        double dist = TransformCoordToMeter(latNow, lonNow, latComm, lonComm);
-                        Log.i("DISTANCE ", ""+ dist);
 
-                        // lecture de la commande vocale si on s'approche suffisement près
-                        if (dist<3) {
-                            Log.i("COMMANDE VOCALE ", ""+ commande.toString());
+                        /* Calcul de la distance entre la position de l'utilisateur et la position de la commande. */
+                        double dist = TransformCoordToMeter(latNow, lonNow, latComm, lonComm);
+
+                        /* Si les points sont à moins de 5m. */
+                        if (dist < 5) {
+                            /* Lancement de la commande vocale audio. */
                             commande.initCommande(OldMapsActivity.this);
                             listeCommandes.remove(0);
                         }
                     }
-                    new CountDownTimer(100, 1) {
-                        public void onFinish() {
-                            // When timer is finished
-                            // Execute your code here
-                            marker.remove();
-                        }
-
-                        public void onTick(long millisUntilFinished) {
-                            // millisUntilFinished    The amount of time until finished.
-                        }
-                    }.start();
-
-
                 }
-                public void onStatusChanged(String provider, int status, Bundle extras) {}
-                public void onProviderEnabled(String provider) {}
-                public void onProviderDisabled(String provider) {}
+
+                public void onStatusChanged(String provider, int status, Bundle extras) {
+                }
+
+                public void onProviderEnabled(String provider) {
+                }
+
+                public void onProviderDisabled(String provider) {
+                }
             };
 
-            androidLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    100, // en millisecondes
-                    1, // en mètres
-                    androidLocationListener);
-
+            /* Requête multiple, suivi de la géolocalisation */
+            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, androidLocationListener);
         }
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         /*
-        Cette fonction vérifie que le téléphone possède bien les autorisations pour capter la localisation.
+        Fonction qui vérifie que le téléphone possède bien les permissions en terme de localisation.
          */
+
         switch (requestCode) {
             case REQUEST_CODE_UPDATE_LOCATION:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -269,8 +296,9 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
     @Override
     protected void onPause() {
         /*
-        Cette fonction stoppe les fonctions en cours en cas de changement d'orientation ou de fermeture de l'application.
+        Fonction qui stoppe les fonctions en cours en cas de changement d'orientation ou de fermeture de l'application.
          */
+
         super.onPause();
         if (androidLocationListener != null) {
             if (androidLocationManager == null) {
@@ -283,19 +311,22 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
     }
 
     public double TransformCoordToMeter(double lat1, double lon1, double lat2, double lon2){
-        int R = 6378000; //Rayon de la terre en mètre
+        /*
+        Fonction qui calcule la distance entre deux points données par leurs coordonnées.
+         */
 
+        /* Rayon de la terre en mètre. */
+        int R = 6378000;
+
+        /* Transformation en radian. */
         double lat1new = (Math.PI * lat1)/180;
         double lon1new = (Math.PI * lon1)/180;
         double lat2new = (Math.PI * lat2)/180;
         double lon2new = (Math.PI * lon2)/180;
 
+        /* Calcul de la distance sur un plan. */
         double dist = R * (Math.PI/2 - Math.asin( Math.sin(lat2new) * Math.sin(lat1new) + Math.cos(lon2new - lon1new) * Math.cos(lat2new) * Math.cos(lat1new)));
+
         return dist;
     }
-
-    public void JouerCommande(String direct, Context context){
-
-    }
-
 }
