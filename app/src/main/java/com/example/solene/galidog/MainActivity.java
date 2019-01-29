@@ -11,13 +11,23 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    /*
+    La classe MainActivity gère la page d'accueil de l'application et le passage d'un trajet "à enregistrer" à un trajet "enregistré"
+    */
 
     private TextView textStart;
+    
+    /* 
+    Boutons permettant d'accéder à la création d'un nouveau trajet, ou à l'affichage d'un ancien
+    */
     private Button btnNewPath;
     private Button btnOldPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        /*
+        Fonction qui se lance à l'ouverture de l'application.
+         */
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Intent intent = getIntent();
@@ -27,45 +37,35 @@ public class MainActivity extends AppCompatActivity {
             btnNewPath = (Button) findViewById(R.id.activity_main_btn_new);
             btnOldPath = (Button) findViewById(R.id.activity_main_btn_old);
 
+            /*
+            Lancement de l'activité MapsActivity lors du clic sur le bouton
+            */
             btnNewPath.setOnClickListener(new View.OnClickListener() {
                 @Override
-                /* L'utilisateur souhaite enregistrer un nouveau chemin, accès à l'activité correspondante */
                 public void onClick(View v) {
                     Intent intentMapsActivity = new Intent(MainActivity.this, MapsActivity.class);
                     startActivity(intentMapsActivity);
                 }
             });
 
+            /*
+            Lancement de l'activité OldMapsActivité lors du clic sur le bouton.
+            L'algorithme vérifie au préalable qu'il a bien recu les données de la phase d'enregistrement
+             */
             if (intent.hasExtra("commandes")){
                 final ArrayList<CommandeVocale> listeCommandes = getIntent().getParcelableArrayListExtra("commandes");
                 final ArrayList<Point> listePoints = getIntent().getParcelableArrayListExtra("points");
-                Log.i("Salur","Salut, Commandes créée :" + listeCommandes);
-                Log.i("Salur","Salut, Point créée :" + listePoints);
 
                 btnOldPath.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    /* L'utilisateur souhaite accéder au chemin enregistré, accès à l'activité correspondante */
                     public void onClick(View v) {
-                        Log.i("salut", "salut, je suis rentré dans l'appel à l'activité");
                         Intent intentOldMapsActivity = new Intent(MainActivity.this, OldMapsActivity.class);
                         intentOldMapsActivity.putParcelableArrayListExtra("commandes", listeCommandes);
                         intentOldMapsActivity.putParcelableArrayListExtra("points", listePoints);
-                        //Bundle bundle = new Bundle();
-                        //bundle.putParcelable("donnees", donnees);
-                        //intentOldMapsActivity.putExtras(bundle);
                         startActivity(intentOldMapsActivity);
                     }
                 });
             }
-
-
-
-
-
-        }
-
-        }
-
-
-
+        } 
+    }
 }
