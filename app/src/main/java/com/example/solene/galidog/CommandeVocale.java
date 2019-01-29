@@ -5,6 +5,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.widget.Toast;
 
 import java.io.IOException;
 
@@ -38,22 +39,29 @@ public class CommandeVocale implements Parcelable {
     }
 
     public void initCommande(Context context) {
-        if (direction == "D") {
+        if (direction.equals("D")) {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.droite);
             jouer.start();
+            Toast.makeText(context, "Droite activée", Toast.LENGTH_SHORT).show();
         }
-        else if (direction == "G") {
+        else if (direction.equals("G")) {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.gauche);
             jouer.start();
+            Toast.makeText(context, "Gauche activée", Toast.LENGTH_SHORT).show();
+
         }
-        else if (direction == "H") {
+        else if (direction.equals("H")) {
             MediaPlayer jouer = MediaPlayer.create(context, R.raw.halte);
             jouer.start();
+            Toast.makeText(context, "Halte activée", Toast.LENGTH_SHORT).show();
+
         }
-        else {
-            Uri myUri = Uri.parse(direction);
+        else if (this.direction.length() > 2 ) {
+            Uri myUri = Uri.parse(this.direction);
             MediaPlayer jouer = MediaPlayer.create(context, myUri);
             jouer.start();
+            Toast.makeText(context, "Autre activée", Toast.LENGTH_SHORT).show();
+
         }
     }
 
@@ -100,12 +108,21 @@ public class CommandeVocale implements Parcelable {
         this.longitude = longitude;
     }
 
+    public String getDirection() {
+        return direction;
+    }
+
+    public void setDirection(String direction) {
+        this.direction = direction;
+    }
+
     @Override
     public String toString() {
         return "CommandeVocale{" +
                 "idCommande=" + idCommande +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
+                ", direction=" + direction +
                 '}';
     }
 
