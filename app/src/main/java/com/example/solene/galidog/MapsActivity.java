@@ -36,47 +36,60 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-
+import java.util.Random;
 
 import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
 import static android.Manifest.permission.RECORD_AUDIO;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+    /*
+    La classe MapsActivity gère l'enregistrement d'un trajet.
+     */
 
+    /* Attributs nécessaires à l'utilisation d'une carte Google Maps, et à la géolocalisation. */
     private GoogleMap mMap;
     private Button btnStartRecord;
+    private LocationManager androidLocationManager;
+    private LocationListener androidLocationListener;
+    private final static int REQUEST_CODE_UPDATE_LOCATION = 42;
+
+    /* Attributs correspondants aux différents boutons de l'activité : commandes pré enregistrées et enregistrement d'une nouvelle commande. */
     private Button btnDroite, btnGauche, btnHalte, btnAutre;
     private Button btnEnreg, btnStop, btnJouer, btnValide;
+
+    /* Attributs pour design de l'application. */
     private PolylineOptions dessin = new PolylineOptions().width(9).color(Color.BLUE);
     private Polyline dessinTrajet;
     private ArrayList<LatLng> listeCoord = new ArrayList<>();
 
-    private LocationManager androidLocationManager;
-    private LocationListener androidLocationListener;
-    private final static int REQUEST_CODE_UPDATE_LOCATION = 42;
+    /* Attributs utiles au fonctionnement de l'algorithme. */
     private Point pointSuivant;
     private ArrayList<Point> listePoints = new ArrayList<>();
     private ArrayList<CommandeVocale> listeCommandes = new ArrayList<>();
 
+    /* Attributs nécessaire à la lecture et l'enregistrement de commandes vocales. */
     String AudioSavePathInDevice = null;
     MediaRecorder mediaRecorder;
     private int idNewCommande = 0;
     public static final int RequestPermissionCode = 1;
     MediaPlayer mediaPlayer;
-
     private int ENREG_NB = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        /*
+        Fonction qui se lance à l'ouverture de l'activité d'enregistrement.
+        */
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps2);
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
+        /*
+         Association des boutons du layout à l'activité.
+         Certains boutons (enregistrement d'une commande) sont pour l'instant invisibles à l'écran.
+         */
         btnStartRecord = (Button) findViewById(R.id.activity_main_btn_start_record);
         btnDroite = (Button) findViewById(R.id.activity_main_btn_droite);
         btnGauche = (Button) findViewById(R.id.activity_main_btn_gauche);
@@ -91,43 +104,44 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         btnStop.setVisibility(View.INVISIBLE);
         btnJouer.setVisibility(View.INVISIBLE);
         btnValide.setVisibility(View.INVISIBLE);
+
     }
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
     @Override
     public void onMapReady(GoogleMap googleMap) {
         /*
-        Cette fonction appelle les fonctions ci-dessous après le chargement de la carte, et gère le bouton d'nregistrement.
+        Fonction qui se lance lorsque la carte Google Maps est prête.
          */
+
         mMap = googleMap;
+
+        /* Initialisation du trajet dessiné */
         dessinTrajet = mMap.addPolyline(dessin);
 
+        /* La fonction androidFirstLocation() affiche la localisation de l'utilisateur à son entrée dans l'activité MapsActivity. */
         androidFirstLocation();
 
         /* Démarrage de l'enregistrement */
         btnStartRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                /* Démarrer l'enregistrement, affichage d'un toast pour vérification */
                 Toast toast = Toast.makeText(MapsActivity.this, "L'enregistrement démarre", Toast.LENGTH_SHORT);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
+
+                /*La fonction androidUpdateLocation() enregistre les points du trajet et les commandes vocales associées. */
                 androidUpdateLocation();
                 btnStartRecord.setText("Arrêter l'enregistrement");
+
+                /* Arrêt de l'enregistrement */
                 btnStartRecord.setOnClickListener((new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         onPause();
                         Toast.makeText(MapsActivity.this, "Fin de l'enregistrement", Toast.LENGTH_SHORT).show();
                         btnStartRecord.setText("Retour à l'accueil");
+
+                        /* Retour à la page d'accueil, avec envoi des données enregistrées. */
                         btnStartRecord.setOnClickListener(new View.OnClickListener() {
                             @Override
                             public void onClick(View v) {
@@ -147,32 +161,42 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         /*
         Cette fonction affiche la géolocalisation de l'utilisateur lorsqu'il arrive pour la première fois sur la page.
          */
+
+        /* Vérification des permissions du téléphone en terme de géolocalisation. */
         if (ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     MapsActivity.this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_CODE_UPDATE_LOCATION);
-        } else {
+        }
+
+        /* Si les permissions sont accordées, mise en place de l'enregistrement. */
+        else {
             androidLocationManager = (LocationManager) this.getSystemService(MapsActivity.this.LOCATION_SERVICE);
             androidLocationListener = new LocationListener() {
                 public void onLocationChanged(Location loc) {
-                    /* Affichage des coordonnées & création d'un marqueur */
+
+                    /* Récupération des coordonnées actuelles */
                     double latNow = loc.getLatitude();
                     double lonNow = loc.getLongitude();
                     Toast.makeText(MapsActivity.this, "Coordonnées : " + latNow + " / " + lonNow, Toast.LENGTH_SHORT).show();
+
+                    /* Ajout du point à la liste des points visités. */
                     LatLng youAreHere = new LatLng(latNow, lonNow);
                     Point newPoint = new Point(latNow, lonNow);
                     listePoints.add(newPoint);
 
+                    /* Démarrage du tracé du trajet. */
                     listeCoord.add(new LatLng(latNow,lonNow));
                     dessinTrajet.setPoints(listeCoord);
+
+                    /* Affichage d'un marqueur à l'emplacement de l'utilisateur. */
                     BitmapDescriptor point1 = BitmapDescriptorFactory.fromResource(R.drawable.point2_init);
                     mMap.addMarker(new MarkerOptions().position(youAreHere).title("Vous êtes ici").icon(point1));
                     int padding = 17;
                     mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
                 }
-
                 public void onStatusChanged(String provider, int status, Bundle extras) {
                 }
 
@@ -184,10 +208,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             };
 
             /* Requête unique (première géolocalisation) */
-            androidLocationManager.requestSingleUpdate(
-                    LocationManager.GPS_PROVIDER,
-                    androidLocationListener,
-                    null);
+            androidLocationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, androidLocationListener, null);
         }
     }
 
@@ -195,42 +216,48 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         /*
         Cette fonction enregistre les différentes positions d'un utilisateur en mouvement, les affiche et les associe aux commandes vocales.
          */
+
+        /* Vérification des permissions du téléphone en terme de géolocalisation. */
         if (ActivityCompat.checkSelfPermission(MapsActivity.this, Manifest.permission.ACCESS_FINE_LOCATION
         ) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(
                     MapsActivity.this,
                     new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                     REQUEST_CODE_UPDATE_LOCATION);
-        } else {
+        }
+
+        /* Si les permissions sont accordées, mise en place de l'enregistrement. */
+        else {
             androidLocationManager = (LocationManager) this.getSystemService(MapsActivity.this.LOCATION_SERVICE);
             androidLocationListener = new LocationListener() {
                 public void onLocationChanged(Location loc) {
-                    // Récupération de la localisation
+
+                    /* Récupération des coordonnées actuelles */
                     double latNow = loc.getLatitude();
                     double lonNow = loc.getLongitude();
                     LatLng youAreHere = new LatLng(latNow, lonNow);
 
-                    //Association à une potentielle commande vocale
-
+                    /* Création d'une potentielle commande vocale, associé à la localisation actuelle */
                     BoutonDroite(latNow, lonNow);
                     BoutonGauche(latNow, lonNow);
                     BoutonHalte(latNow, lonNow);
                     BoutonAutre(latNow, lonNow);
 
+                    /* Si le nombre de satellites disponibles est suffisant, ajout du point à la liste des points visités. */
                     if (RechercheNbSatellite() >= 0) {
                         pointSuivant = new Point(latNow, lonNow);
-
-                        // Ajout à la liste des points du trajet
                         listePoints.add(pointSuivant);
+
+                        /* Actualisation du tracé du trajet. */
                         listeCoord.add(new LatLng(latNow,lonNow));
                         dessinTrajet.setPoints(listeCoord);
 
-                        // Affichage d'un toast au début de l'enregistrement
+                        /* Affichage d'un message lors du premier point enregistré. */
                         if (pointSuivant.getIdPoint() == 1) {
                             Toast.makeText(MapsActivity.this, "Trace en cours ", Toast.LENGTH_SHORT).show();
                         }
 
-                        //Création d'un marqueur
+                        /* Affichage d'un marqueur à l'emplacement de l'utilisateur. */
                         BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_trajet);
                         mMap.addMarker(new MarkerOptions().position(youAreHere).title("Point n°" + pointSuivant.getIdPoint()).icon(point2));
                         int padding = 17;
@@ -249,75 +276,110 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             };
 
             /* Requête multiple, suivi de la géolocalisation */
-            androidLocationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER,
-                    500, // en millisecondes
-                    1, // en mètres
-                    androidLocationListener);
+            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, androidLocationListener);
         }
     }
 
     public void BoutonDroite(final double lat, final double lon) {
-        //Appel bouton droite
+        /*
+        Fonction qui crée une commande vocale "Droite" lors de l'appui sur le bouton.
+         */
+
         btnDroite.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Enregistrement et lecture de la commande
+
                 CommandeVocale newCommande = null;
+
                 try {
+                    /* Création d'une nouvelle commande vocale "Droite". */
                     newCommande = new CommandeVocale("D", lat, lon, MapsActivity.this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                /* Ajout à la liste des commandes du trajet.*/
                 listeCommandes.add(newCommande);
-                //Vérification : Log.i("vérif", "Liste des commandes :" + listeCommandes);
-                Toast.makeText(MapsActivity.this, "Bouton droite activé : " + newCommande.getIdCommande(), Toast.LENGTH_SHORT).show();
+
+                /* Affichage d'un marqueur pour signifier l'emplacement associé à la commande. */
+                BitmapDescriptor pointX = BitmapDescriptorFactory.fromResource(R.drawable.diamond_green);
+                mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Point n°" + pointSuivant.getIdPoint()).icon(pointX));
+
+                Toast.makeText(MapsActivity.this, "Bouton droite activé", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     public void BoutonGauche(final double lat, final double lon) {
-        //Appel bouton gauche
+        /*
+        Fonction qui crée une commande vocale "Gauche" lors de l'appui sur le bouton.
+         */
+
         btnGauche.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 CommandeVocale newCommande = null;
+
                 try {
+                    /* Création d'une nouvelle commande vocale "Gauche". */
                     newCommande = new CommandeVocale("G", lat, lon, MapsActivity.this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                /* Ajout à la liste des commandes du trajet.*/
                 listeCommandes.add(newCommande);
-                Vérification:
-                Log.i("vérif", "Liste des commandes :" + listeCommandes);
-                Toast.makeText(MapsActivity.this, "Bouton gauche activé : " + newCommande.getIdCommande(), Toast.LENGTH_SHORT).show();
+
+                /* Affichage d'un marqueur pour signifier l'emplacement associé à la commande. */
+                BitmapDescriptor pointX = BitmapDescriptorFactory.fromResource(R.drawable.diamond_green);
+                mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Point n°" + pointSuivant.getIdPoint()).icon(pointX));
+
+                Toast.makeText(MapsActivity.this, "Bouton gauche activé", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     public void BoutonHalte(final double lat, final double lon) {
-        //Appel bouton halte
+        /*
+        Fonction qui crée une commande vocale "Gauche" lors de l'appui sur le bouton.
+         */
+
         btnHalte.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
                 CommandeVocale newCommande = null;
+
                 try {
+                    /* Création d'une nouvelle commande vocale "Gauche". */
                     newCommande = new CommandeVocale("H", lat, lon, MapsActivity.this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                /* Ajout à la liste des commandes du trajet.*/
                 listeCommandes.add(newCommande);
-                //Vérification : Log.i("vérif", "Liste des commandes :" + listeCommandes);
-                Toast.makeText(MapsActivity.this, "Bouton halte activé : " + newCommande.getIdCommande(), Toast.LENGTH_SHORT).show();
+
+                /* Affichage d'un marqueur pour signifier l'emplacement associé à la commande. */
+                BitmapDescriptor pointX = BitmapDescriptorFactory.fromResource(R.drawable.diamond_green);
+                mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Point n°" + pointSuivant.getIdPoint()).icon(pointX));
+
+                Toast.makeText(MapsActivity.this, "Bouton halte activé", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
     public void BoutonAutre(final double lat, final double lon) {
-        //Appel bouton autre
+        /*
+        Fonction qui crée une commande vocale "Gauche" lors de l'appui sur le bouton.
+         */
+
         btnAutre.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                /* Affichage des boutons associés à l'enregistrement d'une commande. */
                 btnGauche.setVisibility(View.INVISIBLE);
                 btnDroite.setVisibility(View.INVISIBLE);
                 btnHalte.setVisibility(View.INVISIBLE);
@@ -331,6 +393,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btnValide.setEnabled(false);
                 btnEnreg.setEnabled(true);
 
+                /* La fonction Enregistrement() gère les étapes de l'enregistrement d'une nouvelle commande. */
                 Enregistrement(lat, lon);
             }
         });
@@ -338,25 +401,39 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     public void Enregistrement(final double lat, final double lon){
+        /*
+        Fonction permettant d'enregistrer une nouvelle commande vocale et de l'associer à une géolocalisation.
+        */
+
+        /* Démarrage de l'enregistrement de la commande. */
         btnEnreg.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
+                /* Vérification des permissions du téléphone en terme de microphone. */
                 if (checkPermission()) {
 
+                    /* Compteur du nombre d'enregistrement effectué.
+                    Autorisation de 3 enregistrements.
+                     */
                     ENREG_NB++;
-                    Log.i("ENREGISTREMENT", "" + ENREG_NB);
+
+                    /* Désactivation de l'accessibilité à certains boutons. */
                     btnJouer.setEnabled(false);
                     btnValide.setEnabled(false);
 
-                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" +
+                    /* Création du chemin où la commande sera enregistrée. */
+                    Random random = new Random();
+                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + random +
                             "Enregistrement" + idNewCommande + "AudioRecording.3gp";
                     Log.i("Chemin", "Le CHEMIN EST / " + AudioSavePathInDevice);
                     idNewCommande++;
 
+                    /* La fonction MediaRecorderReady() prépare le téléphone à l'enregistrement. */
                     MediaRecorderReady();
 
                     try {
+                        /* Lancement de l'enregistrement. */
                         mediaRecorder.prepare();
                         mediaRecorder.start();
                     } catch (IllegalStateException e) {
@@ -367,47 +444,60 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         e.printStackTrace();
                     }
 
+                    /* Modification de l'accessibilité à certains boutons. */
                     btnEnreg.setEnabled(false);
                     btnStop.setEnabled(true);
 
-                    Toast.makeText(MapsActivity.this, "Enregistrement démarré",
-                            Toast.LENGTH_LONG).show();
-                } else {
+                    Toast.makeText(MapsActivity.this, "Enregistrement démarré", Toast.LENGTH_LONG).show();
+                }
+                /* Demande de permission d'accès au microphone si celle ci n'est pas accordée. */
+                else {
                     requestPermission();
                 }
 
             }
         });
 
+        /* Arrêt de l'enregistrement de la commande. */
         btnStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                /* Arrêt de l'enregistreur. */
                 mediaRecorder.stop();
+
+                /* Modification de l'accessibilité à certains boutons. */
                 btnStop.setEnabled(false);
                 btnJouer.setEnabled(true);
                 btnEnreg.setEnabled(false);
                 btnValide.setEnabled(false);
 
-                Toast.makeText(MapsActivity.this, "Enregistrement terminé",
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(MapsActivity.this, "Enregistrement terminé", Toast.LENGTH_LONG).show();
             }
         });
 
+        /* Lecture de l'enregistrement pour vérification par l'utilisateur. */
         btnJouer.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) throws IllegalArgumentException,
-                    SecurityException, IllegalStateException {
+            public void onClick(View view) throws IllegalArgumentException, SecurityException, IllegalStateException {
 
+                /* Si l'utilisateur a dépasser le nombre autorisé d'enregistrement, seul le bouton "Valider" sera disponible. */
                 if (ENREG_NB < 3) {
+
+                    /* Modification de l'accessibilité à certains boutons. */
                     btnStop.setEnabled(false);
                     btnEnreg.setEnabled(true);
                     btnValide.setEnabled(true);
-                } else {
+                }
+
+                /* Sinon, l'utilisateur pourra valider ou enregistrer à nouveau. */
+                else {
+                    /* Modification de l'accessibilité à certains boutons. */
                     btnStop.setEnabled(false);
                     btnEnreg.setEnabled(false);
                     btnValide.setEnabled(true);
                 }
 
+                /* Lecture de l'enregistrement. */
                 mediaPlayer = new MediaPlayer();
                 try {
                     mediaPlayer.setDataSource(AudioSavePathInDevice);
@@ -415,30 +505,37 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
                 mediaPlayer.start();
-                Toast.makeText(MapsActivity.this, "Ecoute de l'enregistrement",
-                        Toast.LENGTH_LONG).show();
+
+                Toast.makeText(MapsActivity.this, "Ecoute de l'enregistrement", Toast.LENGTH_LONG).show();
             }
         });
 
+        /* Validation de l'enregistrement. */
         btnValide.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //CONFIRMATION
+
+                /* Confirmation à l'utilisateur que l'enregistrement a été pris en compte. */
                 MediaPlayer jouer = MediaPlayer.create(MapsActivity.this, R.raw.enreg_valid);
                 jouer.start();
 
-                //AJOUT A COMMANDE VOCALE
+                /* Création d'une commande vocale associée au nouvel enregistrement. */
                 CommandeVocale newCommande = null;
                 try {
                     newCommande = new CommandeVocale(AudioSavePathInDevice, lat, lon, MapsActivity.this);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+
+                /* Ajout à la liste des commandes du trajet.*/
                 listeCommandes.add(newCommande);
 
-                //MISE A JOUR DES BOUTONS
+                /* Affichage d'un marqueur pour signifier l'emplacement associé à la commande. */
+                BitmapDescriptor pointX = BitmapDescriptorFactory.fromResource(R.drawable.diamond_green);
+                mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lon)).title("Point n°" + pointSuivant.getIdPoint()).icon(pointX));
+
+                /* Affichage des boutons associés aux commandes pré-enregistrées. */
                 btnEnreg.setVisibility(View.INVISIBLE);
                 btnStop.setVisibility(View.INVISIBLE);
                 btnJouer.setVisibility(View.INVISIBLE);
@@ -455,11 +552,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
     }
 
-    // FONCTION : NE RENVOIE RIEN...
+    /* Attribut pour accéder au nombre de satellite. */
     private int nbSat;
 
     @SuppressLint({"MissingPermission", "NewApi"})
     public int RechercheNbSatellite() {
+        /*
+        NE FONCTIONNE PAS...
+        Fonction qui recherche le nombre de satellites accessibles par le téléphone.
+         */
         new GpsStatus.Listener() {
             public void onGpsStatusChanged(int event) {
                 Log.i("SALUT", "SALUT SALUT SALUT SALUT");
@@ -481,8 +582,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         /*
-        Cette fonction vérifie que le téléphone possède bien les autorisations pour capter la localisation.
+        Fonction qui vérifie que le téléphone possède bien les permissions en terme de localisation.
          */
+
         switch (requestCode) {
             case REQUEST_CODE_UPDATE_LOCATION:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -518,8 +620,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onPause() {
         /*
-        Cette fonction stoppe les fonctions en cours en cas de changement d'orientation ou de fermeture de l'application.
+        Fonction qui stoppe les fonctions en cours en cas de changement d'orientation ou de fermeture de l'application.
          */
+
         super.onPause();
         if(androidLocationListener!=null) {
             if (androidLocationManager == null) {
@@ -532,19 +635,30 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     public void MediaRecorderReady(){
+        /*
+        Fonction de préparation du téléphone à l'enregistrement d'une nouvelle commande.
+         */
         mediaRecorder=new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.OutputFormat.AMR_NB);
+
+        /* Choix du chemin de l'enregistrement. */
         mediaRecorder.setOutputFile(AudioSavePathInDevice);
     }
 
     private void requestPermission() {
+        /*
+        Fonction qui demande à l'utilisateur la permission.
+         */
         ActivityCompat.requestPermissions(MapsActivity.this, new
                 String[]{WRITE_EXTERNAL_STORAGE, RECORD_AUDIO}, RequestPermissionCode);
     }
 
     public boolean checkPermission() {
+        /*
+        Fonction qui vérifie les permissions.
+         */
         int result = ContextCompat.checkSelfPermission(getApplicationContext(),
                 WRITE_EXTERNAL_STORAGE);
         int result1 = ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -553,4 +667,3 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 result1 == PackageManager.PERMISSION_GRANTED;
     }
 }
-
