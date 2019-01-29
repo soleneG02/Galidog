@@ -3,7 +3,6 @@ package com.example.solene.galidog;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -16,10 +15,8 @@ public class MainActivity extends AppCompatActivity {
     */
 
     private TextView textStart;
-    
-    /* 
-    Boutons permettant d'accéder à la création d'un nouveau trajet, ou à l'affichage d'un ancien
-    */
+
+    /* Attributs correspondants aux boutons permettant d'accéder à la création d'un nouveau trajet, ou à l'affichage d'un ancien. */
     private Button btnNewPath;
     private Button btnOldPath;
 
@@ -33,6 +30,9 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = getIntent();
         if (intent != null){
 
+            /*
+            Association des boutons du layout à l'activité
+             */
             textStart = (TextView) findViewById(R.id.activity_main_text_start);
             btnNewPath = (Button) findViewById(R.id.activity_main_btn_new);
             btnOldPath = (Button) findViewById(R.id.activity_main_btn_old);
@@ -66,6 +66,6 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
             }
-        } 
+        }
     }
 }
