@@ -212,7 +212,7 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
             };
 
             /* Requête multiple, suivi de la géolocalisation */
-            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, androidLocationListener);
+            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 1, androidLocationListener);
         }
     }
 
@@ -254,7 +254,7 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
                         /* Si les points sont à moins de 5m. */
                         if (dist < 5) {
                             /* Lancement de la commande vocale audio. */
-                            commande.initCommande(OldMapsActivity.this);
+                            commande.jouerCommande(OldMapsActivity.this);
                             listeCommandes.remove(0);
                         }
                     }
@@ -271,7 +271,7 @@ public class OldMapsActivity extends FragmentActivity implements OnMapReadyCallb
             };
 
             /* Requête multiple, suivi de la géolocalisation */
-            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, androidLocationListener);
+            androidLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, androidLocationListener);
         }
     }
 
