@@ -1,101 +1,44 @@
 package com.example.solene.galidog;
 
-import android.content.Context;
-import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.widget.Toast;
 
-import java.io.IOException;
-
-public class CommandeVocale implements Parcelable {
+public class Point implements Parcelable {
     /*
-    La classe CommandeVocale gère les commandes vocales.
+    La classe Point gère les points du trajet.
      */
 
-    /* Attributs de définition des commandes vocales. */
-    private int idCommande;
-    private static int id = 0;
+    /* Attributs de définition des points. */
     private double latitude;
     private double longitude;
-    private String direction;
+    private double idPoint;
+    private static double id = 0;
 
-    public CommandeVocale(String direct, double lat, double lon, Context context) throws IOException {
+    public Point(double latitude, double longitude) {
         /*
         Fonction de création d'une commande vocale.
          */
 
-        this.idCommande = id ++;
-        this.latitude = lat;
-        this.longitude = lon;
-        this.direction = direct;
-
-        /* Création selon l'attribut donné en arguments. */
-        if (direction == "D") {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.droite);
-            jouer.start();
-        }
-        else if (direction == "G") {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.gauche);
-            jouer.start();
-        }
-        else if (direction == "H") {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.halte);
-            jouer.start();
-        }
-        else {
-        }
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.idPoint = id ++;
     }
 
-    public void jouerCommande(Context context) {
-        /*
-        Fonction de lancement d'une commande vocale lors de l'affichage du trajet.
-         */
-
-        /* Création de la ommande selon l'argument. */
-        if (direction.equals("D")) {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.droite);
-            jouer.start();
-            Toast.makeText(context, "Droite activée", Toast.LENGTH_SHORT).show();
-        }
-        else if (direction.equals("G")) {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.gauche);
-            jouer.start();
-            Toast.makeText(context, "Gauche activée", Toast.LENGTH_SHORT).show();
-
-        }
-        else if (direction.equals("H")) {
-            MediaPlayer jouer = MediaPlayer.create(context, R.raw.halte);
-            jouer.start();
-            Toast.makeText(context, "Halte activée", Toast.LENGTH_SHORT).show();
-
-        }
-        else if (this.direction.length() > 2 ) {
-            Uri myUri = Uri.parse(this.direction);
-            MediaPlayer jouer = MediaPlayer.create(context, myUri);
-            jouer.start();
-            Toast.makeText(context, "Autre activée", Toast.LENGTH_SHORT).show();
-
-        }
-    }
-
-    protected CommandeVocale(Parcel in) {
-        idCommande = in.readInt();
+    protected Point(Parcel in) {
         latitude = in.readDouble();
         longitude = in.readDouble();
-        direction = in.readString();
+        idPoint = in.readDouble();
     }
 
-    public static final Creator<CommandeVocale> CREATOR = new Creator<CommandeVocale>() {
+    public static final Creator<Point> CREATOR = new Creator<Point>() {
         @Override
-        public CommandeVocale createFromParcel(Parcel in) {
-            return new CommandeVocale(in);
+        public Point createFromParcel(Parcel in) {
+            return new Point(in);
         }
 
         @Override
-        public CommandeVocale[] newArray(int size) {
-            return new CommandeVocale[size];
+        public Point[] newArray(int size) {
+            return new Point[size];
         }
     };
 
@@ -103,9 +46,12 @@ public class CommandeVocale implements Parcelable {
         return latitude;
     }
 
-
     public double getLongitude() {
         return longitude;
+    }
+
+    public double getIdPoint() {
+        return idPoint;
     }
 
     @Override
@@ -114,11 +60,10 @@ public class CommandeVocale implements Parcelable {
         Affichage de la commande vocale.
          */
 
-        return "CommandeVocale{" +
-                "idCommande=" + idCommande +
-                ", latitude=" + latitude +
+        return "Point{" +
+                "latitude=" + latitude +
                 ", longitude=" + longitude +
-                ", direction=" + direction +
+                ", idPoint=" + idPoint +
                 '}';
     }
 
@@ -129,9 +74,8 @@ public class CommandeVocale implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeInt(idCommande);
         dest.writeDouble(latitude);
         dest.writeDouble(longitude);
-        dest.writeString(direction);
+        dest.writeDouble(idPoint);
     }
 }
