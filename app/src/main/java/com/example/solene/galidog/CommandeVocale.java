@@ -48,7 +48,7 @@ public class CommandeVocale implements Parcelable {
         }
     }
 
-    public void initCommande(Context context) {
+    public void jouerCommande(Context context) {
         /*
         Fonction de lancement d'une commande vocale lors de l'affichage du trajet.
          */
