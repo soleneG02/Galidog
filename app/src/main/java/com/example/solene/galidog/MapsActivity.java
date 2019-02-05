@@ -159,7 +159,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void androidFirstLocation() {
         /*
-        Cette fonction affiche la géolocalisation de l'utilisateur lorsqu'il arrive pour la première fois sur la page.
+        Fonction qui affiche la géolocalisation de l'utilisateur lorsqu'il arrive pour la première fois sur la page.
          */
 
         /* Vérification des permissions du téléphone en terme de géolocalisation. */
@@ -214,7 +214,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void androidUpdateLocation() {
         /*
-        Cette fonction enregistre les différentes positions d'un utilisateur en mouvement, les affiche et les associe aux commandes vocales.
+        Fonction qui enregistre les différentes positions d'un utilisateur en mouvement, les affiche et les associe aux commandes vocales.
          */
 
         /* Vérification des permissions du téléphone en terme de géolocalisation. */
@@ -342,7 +342,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void BoutonHalte(final double lat, final double lon) {
         /*
-        Fonction qui crée une commande vocale "Gauche" lors de l'appui sur le bouton.
+        Fonction qui crée une commande vocale "Halte" lors de l'appui sur le bouton.
          */
 
         btnHalte.setOnClickListener(new View.OnClickListener() {
@@ -372,7 +372,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     public void BoutonAutre(final double lat, final double lon) {
         /*
-        Fonction qui crée une commande vocale "Gauche" lors de l'appui sur le bouton.
+        Fonction qui crée une commande vocale "Autre" lors de l'appui sur le bouton.
          */
 
         btnAutre.setOnClickListener(new View.OnClickListener() {
@@ -392,6 +392,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btnJouer.setEnabled(false);
                 btnValide.setEnabled(false);
                 btnEnreg.setEnabled(true);
+                btnStartRecord.setEnabled(false);
 
                 /* La fonction Enregistrement() gère les étapes de l'enregistrement d'une nouvelle commande. */
                 Enregistrement(lat, lon);
@@ -548,6 +549,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btnDroite.setEnabled(true);
                 btnAutre.setEnabled(true);
                 btnHalte.setEnabled(true);
+                btnStartRecord.setEnabled(true);
             }
         });
     }
