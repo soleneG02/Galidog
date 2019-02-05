@@ -243,26 +243,24 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     BoutonHalte(latNow, lonNow);
                     BoutonAutre(latNow, lonNow);
 
-                    /* Si le nombre de satellites disponibles est suffisant, ajout du point à la liste des points visités. */
-                    if (RechercheNbSatellite() >= 0) {
-                        pointSuivant = new Point(latNow, lonNow);
-                        listePoints.add(pointSuivant);
+                    /* Ajout du point à la liste des points visités. */
+                    pointSuivant = new Point(latNow, lonNow);
+                    listePoints.add(pointSuivant);
 
-                        /* Actualisation du tracé du trajet. */
-                        listeCoord.add(new LatLng(latNow,lonNow));
-                        dessinTrajet.setPoints(listeCoord);
+                    /* Actualisation du tracé du trajet. */
+                    listeCoord.add(new LatLng(latNow,lonNow));
+                    dessinTrajet.setPoints(listeCoord);
 
-                        /* Affichage d'un message lors du premier point enregistré. */
-                        if (pointSuivant.getIdPoint() == 1) {
-                            Toast.makeText(MapsActivity.this, "Trace en cours ", Toast.LENGTH_SHORT).show();
-                        }
-
-                        /* Affichage d'un marqueur à l'emplacement de l'utilisateur. */
-                        BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_trajet);
-                        mMap.addMarker(new MarkerOptions().position(youAreHere).title("Point n°" + pointSuivant.getIdPoint()).icon(point2));
-                        int padding = 17;
-                        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
+                    /* Affichage d'un message lors du premier point enregistré. */
+                    if (pointSuivant.getIdPoint() == 1) {
+                        Toast.makeText(MapsActivity.this, "Trace en cours ", Toast.LENGTH_SHORT).show();
                     }
+
+                    /* Affichage d'un marqueur à l'emplacement de l'utilisateur. */
+                    BitmapDescriptor point2 = BitmapDescriptorFactory.fromResource(R.drawable.point2_trajet);
+                    mMap.addMarker(new MarkerOptions().position(youAreHere).title("Point n°" + pointSuivant.getIdPoint()).icon(point2));
+                    int padding = 17;
+                    mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(youAreHere, padding));
                 }
 
                 public void onStatusChanged(String provider, int status, Bundle extras) {
@@ -552,33 +550,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 btnStartRecord.setEnabled(true);
             }
         });
-    }
-
-    /* Attribut pour accéder au nombre de satellite. */
-    private int nbSat;
-
-    @SuppressLint({"MissingPermission", "NewApi"})
-    public int RechercheNbSatellite() {
-        /*
-        NE FONCTIONNE PAS...
-        Fonction qui recherche le nombre de satellites accessibles par le téléphone.
-         */
-        new GpsStatus.Listener() {
-            public void onGpsStatusChanged(int event) {
-                Log.i("SALUT", "SALUT SALUT SALUT SALUT");
-                int satellites = 0;
-                int satellitesInFix = 0;
-                for (GpsSatellite sat : androidLocationManager.getGpsStatus(null).getSatellites()) {
-                    if (sat.usedInFix()) {
-                        satellitesInFix++;
-                    }
-                    satellites++;
-                }
-                Log.i("NOMBRE SATELLITES ", satellites + " Used In Last Fix (" + satellitesInFix + ")");
-            }
-        };
-        Log.i("NOMBRE DE SATELLITES ", "Nombre de satellites accessibles : " + nbSat);
-        return nbSat;
     }
 
     @Override
